@@ -335,3 +335,11 @@ default:
             contexts:
                 - Tests\Integration\Behaviour\Features\Context\CommonFeatureContext
                 - Tests\Integration\Behaviour\Features\Context\Domain\SearchEngineFeatureContext
+        title:
+          paths:
+            - "%paths.base%/Features/Scenario/Title"
+          contexts:
+            - Tests\Integration\Behaviour\Features\Context\CommonFeatureContext
+            - Tests\Integration\Behaviour\Features\Context\LanguageFeatureContext
+            - Tests\Integration\Behaviour\Features\Context\Domain\CommonDomainFeatureContext
+            - Tests\Integration\Behaviour\Features\Context\Domain\TitleFeatureContext

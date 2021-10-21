@@ -26,51 +26,56 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\Form\ChoiceProvider;
+namespace PrestaShop\PrestaShop\Core\Form\IdentifiableObject\DataProvider;
 
 use Gender;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use PrestaShop\PrestaShop\Core\CommandBus\CommandBusInterface;
+use PrestaShop\PrestaShop\Core\Domain\Title\Query\GetTitleForEditing;
+use PrestaShop\PrestaShop\Core\Domain\Title\QueryResult\EditableTitle;
 
 /**
- * Class GenderProvider provides genders choices.
+ * Provides data for title's add/edit forms
  */
-final class GenderChoiceProvider implements FormChoiceProviderInterface
+final class TitleFormDataProvider implements FormDataProviderInterface
 {
     /**
-     * @var TranslatorInterface
+     * @var CommandBusInterface
      */
-    private $translator;
+    private $bus;
 
     /**
-     * @param TranslatorInterface $translator
+     * @param CommandBusInterface $bus
      */
-    public function __construct(TranslatorInterface $translator)
+    public function __construct(CommandBusInterface $bus)
     {
-        $this->translator = $translator;
+        $this->bus = $bus;
     }
 
     /**
-     * Get title choices.
-     *
-     * @param bool $withEmptyChoice
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    public function getChoices(bool $withEmptyChoice = true): array
+    public function getData($titleId): array
     {
-        $genders = [];
+        /** @var EditableTitle $editableTitle */
+        $editableTitle = $this->bus->handle(new GetTitleForEditing($titleId));
 
-        if ($withEmptyChoice) {
-            $genders['--'] = '';
-        }
-
-        $genders += [
-            $this->translator->trans('Male', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_MALE,
-            $this->translator->trans('Female', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_FEMALE,
-            $this->translator->trans('Neutral', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_NEUTRAL,
+        return [
+            'name' => $editableTitle->getLocalisedNames(),
+            'gender' => $editableTitle->getGender(),
+            'picture_width' => 16,
+            'picture_height' => 16,
         ];
+    }
 
-        return $genders;
+    /**
+     * {@inheritdoc}
+     */
+    public function getDefaultData(): array
+    {
+        return [
+            'gender' => Gender::GENDER_MALE,
+            'picture_width' => 16,
+            'picture_height' => 16,
+        ];
     }
 }

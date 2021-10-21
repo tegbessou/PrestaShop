@@ -26,51 +26,63 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\Form\ChoiceProvider;
+namespace PrestaShop\PrestaShop\Core\Domain\Title\QueryResult;
 
-use Gender;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use PrestaShop\PrestaShop\Core\Domain\Title\ValueObject\TitleId;
 
 /**
- * Class GenderProvider provides genders choices.
+ * Transfers editable title's data
  */
-final class GenderChoiceProvider implements FormChoiceProviderInterface
+class EditableTitle
 {
     /**
-     * @var TranslatorInterface
+     * @var TitleId
      */
-    private $translator;
+    private $titleId;
 
     /**
-     * @param TranslatorInterface $translator
+     * @var array|string[]
      */
-    public function __construct(TranslatorInterface $translator)
+    private $localisedNames;
+
+    /**
+     * @var int
+     */
+    private $gender;
+
+    /**
+     * @param int $titleId
+     * @param array|string[] $localisedNames
+     * @param int $gender
+     */
+    public function __construct(int $titleId, array $localisedNames, int $gender)
     {
-        $this->translator = $translator;
+        $this->titleId = new TitleId($titleId);
+        $this->localisedNames = $localisedNames;
+        $this->gender = $gender;
     }
 
     /**
-     * Get title choices.
-     *
-     * @param bool $withEmptyChoice
-     *
-     * @return array
+     * @return TitleId
      */
-    public function getChoices(bool $withEmptyChoice = true): array
+    public function getTitleId(): TitleId
     {
-        $genders = [];
+        return $this->titleId;
+    }
 
-        if ($withEmptyChoice) {
-            $genders['--'] = '';
-        }
+    /**
+     * @return string[]
+     */
+    public function getLocalisedNames(): array
+    {
+        return $this->localisedNames;
+    }
 
-        $genders += [
-            $this->translator->trans('Male', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_MALE,
-            $this->translator->trans('Female', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_FEMALE,
-            $this->translator->trans('Neutral', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_NEUTRAL,
-        ];
-
-        return $genders;
+    /**
+     * @return int
+     */
+    public function getGender(): int
+    {
+        return $this->gender;
     }
 }

@@ -26,51 +26,49 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\Form\ChoiceProvider;
+namespace PrestaShop\PrestaShop\Core\Domain\Title\ValueObject;
 
-use Gender;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleException;
 
 /**
- * Class GenderProvider provides genders choices.
+ * Stores title's identity
  */
-final class GenderChoiceProvider implements FormChoiceProviderInterface
+class TitleId
 {
     /**
-     * @var TranslatorInterface
+     * @var int
      */
-    private $translator;
+    private $titleId;
 
     /**
-     * @param TranslatorInterface $translator
+     * @param int $titleId
+     *
+     * @throws TitleException
      */
-    public function __construct(TranslatorInterface $translator)
+    public function __construct(int $titleId)
     {
-        $this->translator = $translator;
+        $this->assertIsIntegerOrMoreThanZero($titleId);
+
+        $this->titleId = $titleId;
     }
 
     /**
-     * Get title choices.
+     * @param int $titleId
      *
-     * @param bool $withEmptyChoice
-     *
-     * @return array
+     * @throws TitleException
      */
-    public function getChoices(bool $withEmptyChoice = true): array
+    private function assertIsIntegerOrMoreThanZero($titleId): void
     {
-        $genders = [];
-
-        if ($withEmptyChoice) {
-            $genders['--'] = '';
+        if (!is_int($titleId) || 0 >= $titleId) {
+            throw new TitleException(sprintf('Invalid Contact id: %s', var_export($titleId, true)));
         }
+    }
 
-        $genders += [
-            $this->translator->trans('Male', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_MALE,
-            $this->translator->trans('Female', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_FEMALE,
-            $this->translator->trans('Neutral', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_NEUTRAL,
-        ];
-
-        return $genders;
+    /**
+     * @return int
+     */
+    public function getValue(): int
+    {
+        return $this->titleId;
     }
 }

@@ -184,6 +184,7 @@ final class TitleGridDefinitionFactory extends AbstractGridDefinitionFactory
                  (new Filter('type', ChoiceType::class))
                      ->setTypeOptions([
                          'choices' => $this->genderChoiceProvider->getChoices(),
+                         'required' => false,
                      ])
                      ->setAssociatedColumn('type')
              )

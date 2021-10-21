@@ -7,3 +7,43 @@ services:
     arguments:
       - '@prestashop.core.image.parser.image_tag_source_parser'
       - '@prestashop.adapter.image_manager'
+
+  prestashop.adapter.title.command_handler.add_title:
+    class: 'PrestaShop\PrestaShop\Adapter\Title\CommandHandler\AddTitleHandler'
+    arguments:
+      - '@validator'
+      - '@prestashop.adapter.image.image_validator'
+    tags:
+      - { name: 'tactician.handler', command: 'PrestaShop\PrestaShop\Core\Domain\Title\Command\AddTitleCommand' }
+
+  prestashop.adapter.title.query_handler.get_title_for_editing:
+    class: 'PrestaShop\PrestaShop\Adapter\Title\QueryHandler\GetTitleForEditingHandler'
+    arguments:
+      - '@validator'
+      - '@prestashop.adapter.image.image_validator'
+    tags:
+      - { name: 'tactician.handler', command: 'PrestaShop\PrestaShop\Core\Domain\Title\Query\GetTitleForEditing' }
+
+  prestashop.adapter.title.command_handler.edit_title:
+    class: 'PrestaShop\PrestaShop\Adapter\Title\CommandHandler\EditTitleHandler'
+    arguments:
+      - '@validator'
+      - '@prestashop.adapter.image.image_validator'
+    tags:
+      - { name: 'tactician.handler', command: 'PrestaShop\PrestaShop\Core\Domain\Title\Command\EditTitleCommand' }
+
+  prestashop.adapter.title.command_handler.delete_title_handler:
+    class: 'PrestaShop\PrestaShop\Adapter\Title\CommandHandler\DeleteTitleHandler'
+    arguments:
+      - '@validator'
+      - '@prestashop.adapter.image.image_validator'
+    tags:
+      - { name: tactician.handler, command: 'PrestaShop\PrestaShop\Core\Domain\Title\Command\DeleteTitleCommand' }
+
+  prestashop.adapter.title.command_handler.bulk_delete_title_handler:
+    class: 'PrestaShop\PrestaShop\Adapter\Title\CommandHandler\BulkDeleteTitleHandler'
+    arguments:
+      - '@validator'
+      - '@prestashop.adapter.image.image_validator'
+    tags:
+      - { name: tactician.handler, command: 'PrestaShop\PrestaShop\Core\Domain\Title\Command\BulkDeleteTitleCommand' }

@@ -26,51 +26,43 @@
 
 declare(strict_types=1);
 
-namespace PrestaShop\PrestaShop\Core\Form\ChoiceProvider;
+namespace PrestaShop\PrestaShop\Core\Domain\Title\Command;
 
-use Gender;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use PrestaShop\PrestaShop\Core\Domain\Title\ValueObject\TitleId;
 
 /**
- * Class GenderProvider provides genders choices.
+ * Bulks delete titles with given data
  */
-final class GenderChoiceProvider implements FormChoiceProviderInterface
+class BulkDeleteTitleCommand
 {
     /**
-     * @var TranslatorInterface
+     * @var TitleId[]
      */
-    private $translator;
+    private $titleIds;
 
     /**
-     * @param TranslatorInterface $translator
+     * @param int[] $titleIds
      */
-    public function __construct(TranslatorInterface $translator)
+    public function __construct(array $titleIds)
     {
-        $this->translator = $translator;
+        $this->setTitleIds($titleIds);
     }
 
     /**
-     * Get title choices.
-     *
-     * @param bool $withEmptyChoice
-     *
-     * @return array
+     * @return TitleId[]
      */
-    public function getChoices(bool $withEmptyChoice = true): array
+    public function getTitleIds(): array
     {
-        $genders = [];
+        return $this->titleIds;
+    }
 
-        if ($withEmptyChoice) {
-            $genders['--'] = '';
+    /**
+     * @param int[] $titleIds
+     */
+    public function setTitleIds(array $titleIds): void
+    {
+        foreach ($titleIds as $titleId) {
+            $this->$titleIds[] = new TitleId($titleId);
         }
-
-        $genders += [
-            $this->translator->trans('Male', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_MALE,
-            $this->translator->trans('Female', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_FEMALE,
-            $this->translator->trans('Neutral', [], 'Admin.Shopparameters.Feature') => Gender::GENDER_NEUTRAL,
-        ];
-
-        return $genders;
     }
 }

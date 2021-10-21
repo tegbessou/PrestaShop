@@ -1779,3 +1779,12 @@ services:
     public: true
     tags:
       - { name: form.type }
+
+  form.type.configure.shop_parameters.customer_preferences.add_update_title:
+    class: 'PrestaShopBundle\Form\Admin\Configure\ShopParameters\CustomerPreferences\TitleType'
+    parent: 'form.type.translatable.aware'
+    public: true
+    arguments:
+      - '@prestashop.core.form.choice_provider.gender_choice_provider'
+    tags:
+      - { name: form.type }

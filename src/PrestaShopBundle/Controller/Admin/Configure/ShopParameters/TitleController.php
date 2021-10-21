@@ -28,7 +28,14 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Controller\Admin\Configure\ShopParameters;
 
-use Context;
+use Exception;
+use PrestaShop\PrestaShop\Core\Domain\Title\Command\BulkDeleteTitleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Title\Command\DeleteTitleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleConstraintException;
+use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleException;
+use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleImageUploadingException;
+use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleNotFoundException;
+use PrestaShop\PrestaShop\Core\Domain\Title\ValueObject\TitleId;
 use PrestaShop\PrestaShop\Core\Search\Filters\TitleFilters;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use PrestaShopBundle\Security\Annotation\AdminSecurity;
@@ -64,7 +71,7 @@ class TitleController extends FrameworkBundleAdminController
     }
 
     /**
-     * Displays and handles currency form.
+     * Displays and handles titles form.
      *
      * @AdminSecurity(
      *     "is_granted('create', request.get('_legacy_controller'))",
@@ -72,20 +79,35 @@ class TitleController extends FrameworkBundleAdminController
      *     message="You need permission to create this."
      * )
      *
+     * @param Request $request
+     *
      * @return Response
      */
-    public function createAction(): Response
+    public function createAction(Request $request): Response
     {
-        return $this->redirect(
-            Context::getContext()->link->getAdminLink(
-                'AdminGenders',
-                true,
-                [],
-                [
-                    'addgender' => '',
-                ]
-            )
-        );
+        $titleFormHandler = $this->get('prestashop.core.form.identifiable_object.handler.title_form_handler');
+        $titleFormBuilder = $this->get('prestashop.core.form.identifiable_object.builder.title_form_builder');
+
+        $titleForm = $titleFormBuilder->getForm();
+        $titleForm->handleRequest($request);
+
+        try {
+            $result = $titleFormHandler->handle($titleForm);
+
+            if (null !== $result->getIdentifiableObjectId()) {
+                $this->addFlash('success', $this->trans('Successful creation.', 'Admin.Notifications.Success'));
+
+                return $this->redirectToRoute('admin_title_index');
+            }
+        } catch (Exception $exception) {
+            $this->addFlash('error', $this->getErrorMessageForException($exception, $this->getErrorMessages()));
+        }
+
+        return $this->render('@PrestaShop/Admin/Configure/ShopParameters/CustomerSettings/Title/create.html.twig', [
+            'titleForm' => $titleForm->createView(),
+            'help_link' => $this->generateSidebarLink($request->attributes->get('_legacy_controller')),
+            'enableSidebar' => true,
+        ]);
     }
 
     /**
@@ -97,21 +119,39 @@ class TitleController extends FrameworkBundleAdminController
      *     message="You need permission to edit this."
      * )
      *
+     * @param Request $request
+     * @param int $titleId
+     *
      * @return Response
      */
-    public function editAction(int $titleId): Response
+    public function editAction(Request $request, int $titleId): Response
     {
-        return $this->redirect(
-            Context::getContext()->link->getAdminLink(
-                'AdminGenders',
-                true,
-                [],
-                [
-                    'updategender' => '',
-                    'id_gender' => $titleId,
-                ]
-            )
-        );
+        $titleFormBuilder = $this->get('prestashop.core.form.identifiable_object.builder.title_form_builder');
+        $titleForm = $titleFormBuilder->getFormFor($titleId);
+
+        $titleForm->handleRequest($request);
+
+        try {
+            $titleFormHandler = $this->get('prestashop.core.form.identifiable_object.handler.title_form_handler');
+            $result = $titleFormHandler->handleFor($titleId, $titleForm);
+
+            if ($result->isSubmitted() && $result->isValid()) {
+                $this->addFlash('success', $this->trans('Successful update.', 'Admin.Notifications.Success'));
+
+                return $this->redirectToRoute('admin_title_index');
+            }
+        } catch (Exception $exception) {
+            $this->addFlash(
+                'error',
+                $this->getErrorMessageForException($exception, $this->getErrorMessages())
+            );
+        }
+
+        return $this->render('@PrestaShop/Admin/Configure/ShopParameters/CustomerSettings/Title/edit.html.twig', [
+            'help_link' => $this->generateSidebarLink($request->attributes->get('_legacy_controller')),
+            'titleForm' => $titleForm->createView(),
+            'enableSidebar' => true,
+        ]);
     }
 
     /**
@@ -124,21 +164,23 @@ class TitleController extends FrameworkBundleAdminController
      * )
      * @DemoRestricted(redirectRoute="admin_title_index")
      *
+     * @param int $titleId
+     *
      * @return RedirectResponse
      */
     public function deleteAction(int $titleId): RedirectResponse
     {
-        return $this->redirect(
-            Context::getContext()->link->getAdminLink(
-                'AdminGenders',
-                true,
-                [],
-                [
-                    'deletegender' => '',
-                    'id_gender' => $titleId,
-                ]
-            )
-        );
+        try {
+            $this->getCommandBus()->handle(new DeleteTitleCommand($titleId));
+        } catch (TitleException $exception) {
+            $this->addFlash('error', $this->getErrorMessageForException($exception, $this->getErrorMessages()));
+
+            return $this->redirectToRoute('admin_title_index');
+        }
+
+        $this->addFlash('success', $this->trans('Successful deletion.', 'Admin.Notifications.Success'));
+
+        return $this->redirectToRoute('admin_title_index');
     }
 
     /**
@@ -147,10 +189,79 @@ class TitleController extends FrameworkBundleAdminController
      * @AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", redirectRoute="admin_title_index")
      * @DemoRestricted(redirectRoute="admin_title_index")
      *
+     * @param Request $request
+     *
      * @return RedirectResponse
      */
-    public function bulkDeleteAction(): RedirectResponse
+    public function bulkDeleteAction(Request $request): RedirectResponse
     {
+        $titlesIds = $this->getBulkTitlesFromRequest($request);
+
+        try {
+            $this->getCommandBus()->handle(new BulkDeleteTitleCommand($titlesIds));
+
+            $this->addFlash(
+                'success',
+                $this->trans('The selection has been successfully deleted.', 'Admin.Notifications.Success')
+            );
+        } catch (TitleException $exception) {
+            $this->addFlash('error', $this->getErrorMessageForException($exception, $this->getErrorMessages()));
+        }
+
         return $this->redirectToRoute('admin_title_index');
+    }
+
+    /**
+     * @return array
+     */
+    private function getErrorMessages(): array
+    {
+        return [
+            TitleNotFoundException::class => $this->trans(
+                'The object cannot be loaded (or found)',
+                'Admin.Notifications.Error'
+            ),
+            TitleConstraintException::class => [
+                TitleConstraintException::MISSING_TITLE_FOR_DEFAULT_LANGUAGE => $this->trans(
+                    'The field %field_name% is required at least in your default language.',
+                    'Admin.Notifications.Error',
+                    [
+                        '%field_name%' => $this->trans('Title', 'Admin.Global'),
+                    ]
+                ),
+            ],
+            TitleImageUploadingException::class => [
+                TitleImageUploadingException::MEMORY_LIMIT_RESTRICTION => $this->trans(
+                    'Due to memory limit restrictions, this image cannot be loaded. Please increase your memory_limit value via your server\'s configuration settings.',
+                    'Admin.Notifications.Error'
+                ),
+                TitleImageUploadingException::UNEXPECTED_ERROR => $this->trans(
+                    'An error occurred while uploading the image.',
+                    'Admin.Notifications.Error'
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Get titles ids from request for bulk action
+     *
+     * @param Request $request
+     *
+     * @return int[]
+     */
+    private function getBulkTitlesFromRequest(Request $request)
+    {
+        $titlesIds = $request->request->get('title_title_bulk');
+
+        if (!is_array($titlesIds)) {
+            return [];
+        }
+
+        foreach ($titlesIds as $i => $titleId) {
+            $titlesIds[$i] = new TitleId((int) $titleId);
+        }
+
+        return $titlesIds;
     }
 }

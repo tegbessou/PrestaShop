@@ -34,6 +34,7 @@ import ColumnTogglingExtension from '@components/grid/extension/column-toggling-
 import SubmitRowActionExtension from '@components/grid/extension/action/row/submit-row-action-extension';
 import FiltersSubmitButtonEnablerExtension from '@components/grid/extension/filters-submit-button-enabler-extension';
 import LinkRowActionExtension from '@components/grid/extension/link-row-action-extension';
+import textToLinkRewriteCopier from '@components/text-to-link-rewrite-copier';
 
 const {$} = window;
 
@@ -50,4 +51,17 @@ $(() => {
   title.addExtension(new SubmitRowActionExtension());
   title.addExtension(new FiltersSubmitButtonEnablerExtension());
   title.addExtension(new LinkRowActionExtension());
+
+  window.prestashop.component.initComponents([
+    'TranslatableField',
+    'TranslatableInput',
+  ]);
+
+  const translatorInput = window.prestashop.instance.translatableInput;
+
+  textToLinkRewriteCopier({
+    sourceElementSelector: 'input[name^="title[name]"]',
+    /* eslint-disable-next-line max-len */
+    destinationElementSelector: `${translatorInput.localeInputSelector}:not(.d-none) input[name^="title[link_rewrite]"]`,
+  });
 });
