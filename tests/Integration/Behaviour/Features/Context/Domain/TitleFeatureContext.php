@@ -29,8 +29,11 @@ declare(strict_types=1);
 namespace Tests\Integration\Behaviour\Features\Context\Domain;
 
 use Behat\Gherkin\Node\TableNode;
+use Gender;
 use PHPUnit\Framework\Assert;
 use PrestaShop\PrestaShop\Core\Domain\Title\Command\AddTitleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Title\Command\BulkDeleteTitleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Title\Command\DeleteTitleCommand;
 use PrestaShop\PrestaShop\Core\Domain\Title\Command\EditTitleCommand;
 use PrestaShop\PrestaShop\Core\Domain\Title\Exception\TitleException;
 use PrestaShop\PrestaShop\Core\Domain\Title\Query\GetTitleForEditing;
@@ -38,7 +41,6 @@ use PrestaShop\PrestaShop\Core\Domain\Title\QueryResult\EditableTitle;
 use PrestaShop\PrestaShop\Core\Domain\Title\ValueObject\TitleId;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Tests\Integration\Behaviour\Features\Context\SharedStorage;
 
 class TitleFeatureContext extends AbstractDomainFeatureContext
 {
@@ -48,18 +50,23 @@ class TitleFeatureContext extends AbstractDomainFeatureContext
     private $titleData;
 
     /**
-     * @When I add new title :reference with following properties:
+     * @When I add new title with following properties:
      *
-     * @param string $reference
      * @param TableNode $tableNode
      */
-    public function addTitle(string $reference, TableNode $tableNode): void
+    public function addTitle(TableNode $tableNode): void
     {
         $data = $this->localizeByRows($tableNode);
         $uploadedFile = null;
+
         if (isset($data['image'])) {
+            copy(
+                dirname(__DIR__, 5) . '/Resources/assets/new_logo.jpg',
+                _PS_TMP_IMG_DIR_ . $data['image']
+            );
+
             $uploadedFile = new UploadedFile(
-                'tests/Resources/dummyFile/' . $data['image'],
+                _PS_TMP_IMG_DIR_ . $data['image'],
                 $data['image']
             );
         }
@@ -73,51 +80,34 @@ class TitleFeatureContext extends AbstractDomainFeatureContext
 
         /** @var TitleId $titleId */
         $titleId = $this->getCommandBus()->handle($addCommand);
-        $this->getSharedStorage()->set($reference, $titleId->getValue());
     }
 
     /**
-     * @When title :reference should have following properties:
+     * @When I update title :titleId with following properties:
      *
-     * @param string $reference
+     * @param int $titleId
      * @param TableNode $tableNode
      */
-    public function titleShouldHaveFollowingProperties(string $reference, TableNode $tableNode)
-    {
-        $data = $this->localizeByRows($tableNode);
-
-        /** @var int $titleId */
-        $titleId = SharedStorage::getStorage()->get($reference);
-        $expectedEditableTitle = $this->mapToEditableTitle($titleId, $data);
-
-        /** @var EditableTitle $editableTitle */
-        $editableTitle = $this->getQueryBus()->handle(new GetTitleForEditing($titleId));
-
-        Assert::assertEquals($expectedEditableTitle, $editableTitle);
-    }
-
-    /**
-     * @When I update title :reference with following properties:
-     *
-     * @param string $reference
-     * @param TableNode $tableNode
-     */
-    public function updateContactWithFollowingProperties(string $reference, TableNode $tableNode)
+    public function updateTitleWithFollowingProperties(int $titleId, TableNode $tableNode)
     {
         $data = $this->localizeByRows($tableNode);
         $uploadedFile = null;
         if (isset($data['image'])) {
+            copy(
+                dirname(__DIR__, 5) . '/Resources/assets/new_logo.jpg',
+                _PS_TMP_IMG_DIR_ . $data['image']
+            );
+
             $uploadedFile = new UploadedFile(
-                'tests/Resources/dummyFile/' . $data['image'],
+                _PS_TMP_IMG_DIR_ . $data['image'],
                 $data['image']
             );
         }
 
-        /** @var int $titleId */
-        $titleId = SharedStorage::getStorage()->get($reference);
+        $title = new Gender($titleId);
 
         $editTitleCommand = new EditTitleCommand(
-            $titleId,
+            $title->id,
             $data['localised_names'],
             (int) $data['gender'],
             $uploadedFile === null ? null : $uploadedFile->getPathname(),
@@ -131,7 +121,7 @@ class TitleFeatureContext extends AbstractDomainFeatureContext
     /**
      * @When I request reference data for :titleId
      */
-    public function getCurrencyReferenceData($titleId)
+    public function getTitleReferenceData($titleId)
     {
         try {
             $this->titleData = $this->getCommandBus()->handle(new GetTitleForEditing((int) $titleId));
@@ -161,6 +151,82 @@ class TitleFeatureContext extends AbstractDomainFeatureContext
                 throw new RuntimeException(sprintf('Invalid title data field %s: %s expected %s', $key, json_encode($apiData[$key]), json_encode($expectedValue)));
             }
         }
+    }
+
+    /**
+     * @When I delete title with ID :titleId
+     *
+     * @param int $titleId
+     */
+    public function deleteTitle(int $titleId)
+    {
+        $title = new Gender($titleId);
+
+        if ($title->id === null) {
+            throw new RuntimeException(sprintf('No title found with the id "%s"', $titleId));
+        }
+
+        try {
+            $this->cleanLastException();
+            $this->getCommandBus()->handle(new DeleteTitleCommand($titleId));
+        } catch (TitleException $e) {
+            $this->setLastException($e);
+        }
+    }
+
+    /**
+     * @When I bulk delete titles with ID :titleIds
+     *
+     * @param string $ids
+     */
+    public function bulkDeleteLanguage(string $ids): void
+    {
+        $ids = explode(',', $ids);
+        $titleIds = [];
+        foreach ($ids as $titleId) {
+            $title = new Gender((int) $titleId);
+            if ($title->id === null) {
+                throw new RuntimeException(sprintf('No title found with the ID "%s"', $titleId));
+            }
+            $titleIds[] = $title->id;
+        }
+
+        try {
+            $this->cleanLastException();
+            $this->getCommandBus()->handle(new BulkDeleteTitleCommand($titleIds));
+        } catch (TitleException $e) {
+            $this->setLastException($e);
+        }
+    }
+
+    /**
+     * @Then the title with ID :titleId should exist
+     *
+     * @param int $titleId
+     */
+    public function checkTitleExists(int $titleId): void
+    {
+        $title = new Gender($titleId);
+
+        Assert::assertNotNull(
+            $title->id,
+            sprintf('Title found with the id "%s"', $titleId)
+        );
+    }
+
+    /**
+     * @Then the title with ID :titleId shouldn't exist
+     *
+     * @param int $titleId
+     */
+    public function checkTitleNotExists(int $titleId): void
+    {
+        $title = new Gender($titleId);
+
+        Assert::assertNull(
+            $title->id,
+            sprintf('Title found with the id "%s"', $titleId)
+        );
     }
 
     /**

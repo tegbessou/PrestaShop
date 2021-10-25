@@ -15,6 +15,6 @@ Feature: Title Data
     When I request reference data for 1
     Then I should get no error
     And I should get title data:
-      | title_id               | 1        |
-      | localised_names[en-US] | Mr.        |
-      | gender                 | 0          |
+      | title_id               | 1   |
+      | localised_names[en-US] | Mr. |
+      | gender                 | 0   |

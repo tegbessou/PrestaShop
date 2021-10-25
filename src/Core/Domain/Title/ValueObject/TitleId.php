@@ -60,7 +60,7 @@ class TitleId
     private function assertIsIntegerOrMoreThanZero($titleId): void
     {
         if (!is_int($titleId) || 0 >= $titleId) {
-            throw new TitleException(sprintf('Invalid Contact id: %s', var_export($titleId, true)));
+            throw new TitleException(sprintf('Invalid Title id: %s', var_export($titleId, true)));
         }
     }
 

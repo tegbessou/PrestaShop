@@ -62,7 +62,7 @@ class BulkDeleteTitleCommand
     public function setTitleIds(array $titleIds): void
     {
         foreach ($titleIds as $titleId) {
-            $this->$titleIds[] = new TitleId($titleId);
+            $this->titleIds[] = new TitleId($titleId);
         }
     }
 }
