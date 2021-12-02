@@ -6,3 +6,7 @@ _admin_routing:
 _api_routing:
   resource: "@PrestaShopBundle/Resources/config/routing/api.yml"
   prefix: /api
+
+_app_legacy:
+  resource: .
+  type: legacy

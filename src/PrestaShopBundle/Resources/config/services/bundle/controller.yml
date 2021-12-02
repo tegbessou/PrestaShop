@@ -144,3 +144,8 @@ services:
       entityManager: "@doctrine.orm.entity_manager"
     tags:
       - { name: !php/const PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController::PRESTASHOP_CORE_CONTROLLERS_TAG }
+
+  prestashop.core.admin.legacy_controller:
+    class: PrestaShopBundle\Controller\Admin\LegacyAdminController
+    properties:
+      translator: '@translator'

@@ -110,3 +110,11 @@ services:
       - '@logger'
     tags:
       - { name: kernel.event_subscriber }
+
+  prestashop.legacy_controller_set_media.listener:
+    class: PrestaShopBundle\EventListener\LegacyControllerSetMediaListener
+    arguments:
+      - '@prestashop.core.hook.dispatcher'
+      - '@prestashop.core.admin.multistore'
+    tags:
+      - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }

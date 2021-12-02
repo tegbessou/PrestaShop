@@ -55,3 +55,9 @@ services:
     class: 'PrestaShopBundle\Routing\Linter\AdminRouteProvider'
     arguments:
       - '@router'
+
+  prestashop.bundle.routing.legacy_controller_route_loader:
+    class: 'PrestaShopBundle\Routing\LegacyControllerLoader'
+    arguments:
+      - !tagged_iterator prestashop.core.legacy_controller
+    tags: [ routing.loader ]

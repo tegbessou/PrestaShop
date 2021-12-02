@@ -294,9 +294,12 @@ abstract class ControllerCore
      */
     public function run()
     {
+        //ok
         $this->init();
+        //ok
         if ($this->checkAccess()) {
             // setMedia MUST be called before postProcess
+            // to handle in a controller listener
             if (!$this->content_only && ($this->display_header || (isset($this->className) && $this->className))) {
                 $this->setMedia();
             }

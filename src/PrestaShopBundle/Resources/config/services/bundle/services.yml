@@ -109,3 +109,25 @@ services:
     class: PrestaShopBundle\Service\Multistore\CustomizedConfigurationChecker
     arguments:
       - "@prestashop.adapter.legacy.configuration"
+
+  prestashop.legacy_controller.init_controller:
+    class: PrestaShopBundle\Service\LegacyController\InitController
+    arguments:
+      - '@prestashop.core.localization.locale.repository'
+      - '@prestashop.core.admin.multistore'
+      - '@translator'
+      - '@request_stack'
+
+  prestashop.legacy_controller.init_header:
+    class: PrestaShopBundle\Service\LegacyController\InitHeader
+    arguments:
+      - '@prestashop.core.hook.dispatcher'
+      - '@translator'
+
+  prestashop.legacy_controller.load_object:
+    class: PrestaShopBundle\Service\LegacyController\LoadObject
+    arguments:
+      - '@translator'
+
+  prestashop.legacy_controller.rendering:
+    class: PrestaShopBundle\Service\LegacyController\Rendering

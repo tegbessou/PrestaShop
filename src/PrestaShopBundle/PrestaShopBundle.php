@@ -26,11 +26,13 @@
 
 namespace PrestaShopBundle;
 
+use PrestaShopBundle\Controller\Admin\LegacyAdminControllerInterface;
 use PrestaShopBundle\DependencyInjection\Compiler\CommandAndQueryCollectorPass;
 use PrestaShopBundle\DependencyInjection\Compiler\ContainerInjectionPass;
 use PrestaShopBundle\DependencyInjection\Compiler\DynamicRolePass;
 use PrestaShopBundle\DependencyInjection\Compiler\GridDefinitionServiceIdsCollectorPass;
 use PrestaShopBundle\DependencyInjection\Compiler\IdentifiableObjectFormTypesCollectorPass;
+use PrestaShopBundle\DependencyInjection\Compiler\LegacyControllerTagPass;
 use PrestaShopBundle\DependencyInjection\Compiler\LoadServicesFromModulesPass;
 use PrestaShopBundle\DependencyInjection\Compiler\ModulesDoctrineCompilerPass;
 use PrestaShopBundle\DependencyInjection\Compiler\OptionsFormHookNameCollectorPass;
@@ -71,5 +73,6 @@ class PrestaShopBundle extends Bundle
         $container->addCompilerPass(new GridDefinitionServiceIdsCollectorPass());
         $container->addCompilerPass(new IdentifiableObjectFormTypesCollectorPass());
         $container->addCompilerPass(new ContainerInjectionPass());
+        $container->addCompilerPass(new LegacyControllerTagPass());
     }
 }
